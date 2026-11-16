@@ -4,6 +4,7 @@ import sharp from "sharp";
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
 const MAX_PIXELS = 40_000_000;
 const MAX_DIMENSION = 8000;
+const MAX_TARGET_SIZE = 100 * 1024 * 1024;
 
 const SUPPORTED_FORMATS = ["jpeg", "png", "webp", "avif"];
 
@@ -17,7 +18,7 @@ const FORMAT_MIME_TYPES = {
 const ERROR_MESSAGES = {
   INVALID_REQUEST: "Invalid request. Please try again.",
   MISSING_FILE: "Please select an image to compress.",
-  EMPTY_FILE: "The selected image is empty. Please choose another file.",
+  EMPTY_FILE: "The selected image is empty.",
   FILE_TOO_LARGE: "Image size exceeds the 20 MB limit.",
   UNSUPPORTED_FORMAT:
     "Unsupported image format. Please upload JPEG, PNG, WebP or AVIF.",
@@ -27,6 +28,10 @@ const ERROR_MESSAGES = {
   INVALID_FORMAT: "Please select a supported output format.",
   INVALID_DIMENSIONS:
     "Image dimensions must be whole numbers between 1 and 8000 pixels.",
+  INVALID_TARGET_SIZE:
+    "Target size must be a valid positive number up to 100 MB.",
+  TARGET_SIZE_UNREACHABLE:
+    "This image cannot be compressed to the requested target size with the selected settings.",
   IMAGE_TOO_LARGE:
     "This image has too many pixels to process safely. Please resize it first.",
   ANIMATED_IMAGE:
@@ -86,6 +91,14 @@ function safeFilename(name) {
   return base || "image";
 }
 
+function formatTargetSize(bytes) {
+  if (bytes >= 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  return `${(bytes / 1024).toFixed(2)} KB`;
+}
+
 function getProcessingError(error) {
   const message = String(error?.message || "").toLowerCase();
 
@@ -94,10 +107,7 @@ function getProcessingError(error) {
     message.includes("exceeds pixel limit") ||
     message.includes("image exceeds")
   ) {
-    return {
-      code: "IMAGE_TOO_LARGE",
-      status: 413,
-    };
+    return { code: "IMAGE_TOO_LARGE", status: 413 };
   }
 
   if (
@@ -105,10 +115,7 @@ function getProcessingError(error) {
     message.includes("unsupported format") ||
     message.includes("input file contains unsupported image format")
   ) {
-    return {
-      code: "UNSUPPORTED_FORMAT",
-      status: 415,
-    };
+    return { code: "UNSUPPORTED_FORMAT", status: 415 };
   }
 
   if (
@@ -118,16 +125,144 @@ function getProcessingError(error) {
     message.includes("invalid image") ||
     message.includes("bad seek")
   ) {
-    return {
-      code: "CORRUPTED_IMAGE",
-      status: 422,
-    };
+    return { code: "CORRUPTED_IMAGE", status: 422 };
   }
 
-  return {
-    code: "PROCESSING_FAILED",
-    status: 500,
-  };
+  return { code: "PROCESSING_FAILED", status: 500 };
+}
+
+// Create a fresh Sharp pipeline for every encoding attempt.
+function createImagePipeline(input, options) {
+  const {
+    width,
+    height,
+    keepRatio,
+    outputFormat,
+    quality,
+    progressive,
+    hasAlpha,
+  } = options;
+
+  let image = sharp(input, {
+    limitInputPixels: MAX_PIXELS,
+    failOn: "error",
+  });
+
+  if (width || height) {
+    image = image.resize({
+      width,
+      height,
+      fit: keepRatio ? "inside" : "fill",
+      withoutEnlargement: false,
+      position: "centre",
+    });
+  }
+
+  if (outputFormat === "jpeg" && hasAlpha) {
+    image = image.flatten({ background: "#ffffff" });
+  }
+
+  switch (outputFormat) {
+    case "jpeg":
+      return image.jpeg({
+        quality,
+        progressive,
+        mozjpeg: true,
+      });
+
+    case "png":
+      return image.png({
+        compressionLevel: 9,
+        adaptiveFiltering: true,
+      });
+
+    case "webp":
+      return image.webp({
+        quality,
+        effort: 4,
+      });
+
+    case "avif":
+      return image.avif({
+        quality,
+        effort: 4,
+      });
+
+    default:
+      throw new Error("Unsupported output format.");
+  }
+}
+
+async function encodeImage(input, options, quality) {
+  return createImagePipeline(input, {
+    ...options,
+    quality,
+  }).toBuffer();
+}
+
+// Find the highest usable quality that fits the requested maximum size.
+async function compressToTarget(input, options, targetSize, initialQuality) {
+  const { outputFormat } = options;
+
+  // PNG encoding is lossless. Its output size cannot be reduced
+  // through the quality setting.
+  if (outputFormat === "png") {
+    const output = await encodeImage(input, options, initialQuality);
+
+    if (output.length > targetSize) {
+      throw new Error(
+        `This PNG image cannot reach ${formatTargetSize(targetSize)}. Try a larger target size or resize the image.`
+      );
+    }
+
+    return output;
+  }
+
+  // First try the user's selected quality.
+  const initialOutput = await encodeImage(
+    input,
+    options,
+    initialQuality
+  );
+
+  if (initialOutput.length <= targetSize) {
+    return initialOutput;
+  }
+
+  // Check whether the minimum supported quality can reach the target.
+  const minimumQuality = 10;
+  const minimumOutput = await encodeImage(
+    input,
+    options,
+    minimumQuality
+  );
+
+  if (minimumOutput.length > targetSize) {
+    throw new Error(
+      `This image cannot be reduced to ${formatTargetSize(targetSize)} with the selected dimensions and format. Try a larger target size or smaller dimensions.`
+    );
+  }
+
+  let bestOutput = minimumOutput;
+  let low = minimumQuality + 1;
+  let high = initialQuality - 1;
+
+  // Binary search for the highest quality that fits.
+  // Keep the best valid result found so far.
+  for (let attempt = 0; attempt < 8 && low <= high; attempt += 1) {
+    const middle = Math.floor((low + high) / 2);
+
+    const candidate = await encodeImage(input, options, middle);
+
+    if (candidate.length <= targetSize) {
+      bestOutput = candidate;
+      low = middle + 1;
+    } else {
+      high = middle - 1;
+    }
+  }
+
+  return bestOutput;
 }
 
 export async function POST(request) {
@@ -213,7 +348,26 @@ export async function POST(request) {
     const width = widthResult.value;
     const height = heightResult.value;
 
-    // 7. Validate aspect-ratio setting.
+    // 7. Validate optional target size in bytes.
+    const targetSizeValue = formData.get("targetSizeBytes");
+
+    let targetSize = null;
+
+    if (targetSizeValue !== null && targetSizeValue !== "") {
+      const parsedTarget = Number(targetSizeValue);
+
+      if (
+        !Number.isSafeInteger(parsedTarget) ||
+        parsedTarget <= 0 ||
+        parsedTarget > MAX_TARGET_SIZE
+      ) {
+        return jsonError("INVALID_TARGET_SIZE", 400);
+      }
+
+      targetSize = parsedTarget;
+    }
+
+    // 8. Validate aspect ratio.
     const keepRatioValue = formData.get("keepRatio");
 
     if (
@@ -228,10 +382,9 @@ export async function POST(request) {
       );
     }
 
-    // Default to preserving proportions if the field is omitted.
     const keepRatio = keepRatioValue !== "false";
 
-    // 8. Validate progressive JPEG setting.
+    // 9. Validate progressive JPEG setting.
     const progressiveValue = formData.get("progressive");
 
     if (
@@ -248,10 +401,10 @@ export async function POST(request) {
 
     const progressive = progressiveValue === "true";
 
-    // 9. Read image.
+    // 10. Read image.
     const input = Buffer.from(await file.arrayBuffer());
 
-    let image = sharp(input, {
+    const image = sharp(input, {
       limitInputPixels: MAX_PIXELS,
       failOn: "error",
     });
@@ -264,7 +417,7 @@ export async function POST(request) {
       return jsonError("CORRUPTED_IMAGE", 422);
     }
 
-    // 10. Verify actual image format.
+    // 11. Verify actual image format.
     if (!SUPPORTED_FORMATS.includes(metadata.format)) {
       return jsonError("UNSUPPORTED_FORMAT", 415);
     }
@@ -273,12 +426,12 @@ export async function POST(request) {
       return jsonError("CORRUPTED_IMAGE", 422);
     }
 
-    // 11. Reject animated images.
+    // 12. Reject animated images.
     if (metadata.pages && metadata.pages > 1) {
       return jsonError("ANIMATED_IMAGE", 422);
     }
 
-    // 12. Determine output format.
+    // 13. Determine output format.
     const outputFormat =
       normalizedFormat === "original"
         ? metadata.format
@@ -288,72 +441,54 @@ export async function POST(request) {
       return jsonError("INVALID_FORMAT", 400);
     }
 
-    // 13. Configure image resizing.
-    if (width || height) {
-      image = image.resize({
-        width,
-        height,
+    const options = {
+      width,
+      height,
+      keepRatio,
+      outputFormat,
+      progressive,
+      hasAlpha: metadata.hasAlpha,
+    };
 
-        // ON: preserve original proportions.
-        // OFF: force the requested width and height.
-        fit: keepRatio ? "inside" : "fill",
-
-        // Allow resizing to enlarge smaller images.
-        withoutEnlargement: false,
-
-        // Avoid unexpected cropping.
-        position: "centre",
-      });
-    }
-
-    // 14. JPEG cannot preserve transparency.
-    if (outputFormat === "jpeg" && metadata.hasAlpha) {
-      image = image.flatten({
-        background: "#ffffff",
-      });
-    }
-
-    // 15. Configure output encoder.
-    switch (outputFormat) {
-      case "jpeg":
-        image = image.jpeg({
-          quality,
-          progressive,
-          mozjpeg: true,
-        });
-        break;
-
-      case "png":
-        image = image.png({
-          compressionLevel: 9,
-          adaptiveFiltering: true,
-        });
-        break;
-
-      case "webp":
-        image = image.webp({
-          quality,
-          effort: 4,
-        });
-        break;
-
-      case "avif":
-        image = image.avif({
-          quality,
-          effort: 4,
-        });
-        break;
-
-      default:
-        return jsonError("INVALID_FORMAT", 400);
-    }
-
-    // 16. Process image.
+    // 14. Compress, optionally enforcing the target size.
     let output;
 
     try {
-      output = await image.toBuffer();
+      output = targetSize
+        ? await compressToTarget(
+            input,
+            options,
+            targetSize,
+            quality
+          )
+        : await encodeImage(input, options, quality);
     } catch (error) {
+      if (
+        targetSize &&
+        String(error?.message || "").includes(
+          "cannot reach"
+        )
+      ) {
+        return jsonError(
+          "TARGET_SIZE_UNREACHABLE",
+          422,
+          error.message
+        );
+      }
+
+      if (
+        targetSize &&
+        String(error?.message || "").includes(
+          "cannot be reduced"
+        )
+      ) {
+        return jsonError(
+          "TARGET_SIZE_UNREACHABLE",
+          422,
+          error.message
+        );
+      }
+
       console.error("Sharp processing error:", error);
 
       const processingError = getProcessingError(error);
@@ -368,14 +503,14 @@ export async function POST(request) {
       return jsonError("PROCESSING_FAILED", 500);
     }
 
-    // 17. Read actual output dimensions.
+    // 15. Read actual output dimensions.
     const outputMetadata = await sharp(output).metadata();
 
     if (!outputMetadata.width || !outputMetadata.height) {
       return jsonError("PROCESSING_FAILED", 500);
     }
 
-    // 18. Calculate compression results.
+    // 16. Calculate results.
     const savings =
       ((file.size - output.length) / file.size) * 100;
 
@@ -385,17 +520,13 @@ export async function POST(request) {
     const outputName =
       `${safeFilename(file.name)}-compressed.${extension}`;
 
-    // 19. Return compressed image.
+    // 17. Return compressed image.
     return new Response(new Uint8Array(output), {
       status: 200,
       headers: {
         "Content-Type": FORMAT_MIME_TYPES[outputFormat],
-
-        "Content-Disposition":
-          `attachment; filename="${outputName}"`,
-
+        "Content-Disposition": `attachment; filename="${outputName}"`,
         "Content-Length": String(output.length),
-
         "Cache-Control": "no-store",
 
         "X-Original-Size": String(file.size),
@@ -409,6 +540,7 @@ export async function POST(request) {
         "X-Output-Height": String(outputMetadata.height),
 
         "X-Output-Format": outputFormat,
+        "X-Target-Size": targetSize ? String(targetSize) : "",
       },
     });
   } catch (error) {

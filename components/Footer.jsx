@@ -133,7 +133,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 text-center sm:flex-row sm:text-left">
           <p className="text-xs text-slate-500">
-            © {new Date().getFullYear()} DigitalTool. All rights reserved.
+            © 2026 DigitalTool. All rights reserved.
           </p>
 
           <p className="text-xs text-slate-500">

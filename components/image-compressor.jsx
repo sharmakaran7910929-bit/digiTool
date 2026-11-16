@@ -21,7 +21,6 @@ import {
   X,
   Zap,
   Maximize2,
-  Clock3,
 } from "lucide-react";
 
 const presets = [
@@ -45,6 +44,7 @@ const presets = [
 const formats = ["Original", "WebP", "JPEG", "PNG", "AVIF"];
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
+const MAX_TARGET_SIZE = 100 * 1024 * 1024;
 
 const ALLOWED_TYPES = [
   "image/jpeg",
@@ -59,6 +59,7 @@ function formatBytes(bytes = 0) {
   }
 
   const units = ["B", "KB", "MB", "GB"];
+
   const index = Math.min(
     Math.floor(Math.log(bytes) / Math.log(1024)),
     units.length - 1
@@ -115,6 +116,10 @@ export default function ImageCompressor() {
   const [width, setWidth] = useState("");
   const [height, setHeight] = useState("");
   const [keepRatio, setKeepRatio] = useState(true);
+
+  // Custom maximum output size
+  const [targetSize, setTargetSize] = useState("");
+  const [targetSizeUnit, setTargetSizeUnit] = useState("KB");
 
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -267,9 +272,7 @@ export default function ImageCompressor() {
       error: null,
     }));
 
-    setFiles((current) => {
-      return [...current, ...newItems];
-    });
+    setFiles((current) => [...current, ...newItems]);
 
     setSelectedId((current) => current || newItems[0].id);
   };
@@ -367,15 +370,48 @@ export default function ImageCompressor() {
     if (!queue.length) return;
 
     if (
-      (width.trim() && Number(width) <= 0) ||
-      (height.trim() && Number(height) <= 0) ||
-      (width.trim() && Number(width) > 8000) ||
-      (height.trim() && Number(height) > 8000)
+      (width.trim() &&
+        (!Number.isFinite(Number(width)) ||
+          Number(width) <= 0 ||
+          Number(width) > 8000)) ||
+      (height.trim() &&
+        (!Number.isFinite(Number(height)) ||
+          Number(height) <= 0 ||
+          Number(height) > 8000))
     ) {
       setBatchError(
         "Width and height must be between 1 and 8000 pixels."
       );
       return;
+    }
+
+    // Validate custom maximum output size
+    let targetSizeBytes = null;
+
+    if (targetSize.trim()) {
+      const numericTarget = Number(targetSize);
+
+      const multiplier =
+        targetSizeUnit === "MB"
+          ? 1024 * 1024
+          : 1024;
+
+      targetSizeBytes = Math.round(
+        numericTarget * multiplier
+      );
+
+      if (
+        !Number.isFinite(numericTarget) ||
+        numericTarget <= 0 ||
+        !Number.isSafeInteger(targetSizeBytes) ||
+        targetSizeBytes > MAX_TARGET_SIZE ||
+        targetSizeBytes < 1
+      ) {
+        setBatchError(
+          "Enter a valid target size greater than 0 and up to 100 MB."
+        );
+        return;
+      }
     }
 
     setProcessing(true);
@@ -387,6 +423,16 @@ export default function ImageCompressor() {
 
     try {
       for (const item of queue) {
+
+        // Ensure target size does not exceed this image's original size
+if (
+  targetSizeBytes !== null &&
+  targetSizeBytes > item.file.size
+) {
+  throw new Error(
+    `Target size (${formatBytes(targetSizeBytes)}) cannot be greater than this image's original size (${formatBytes(item.file.size)}).`
+  );
+}
         setFiles((current) =>
           current.map((file) =>
             file.id === item.id
@@ -416,6 +462,14 @@ export default function ImageCompressor() {
           }
 
           formData.append("progressive", "false");
+
+          // Apply the same target size to every image
+          if (targetSizeBytes !== null) {
+            formData.append(
+              "targetSizeBytes",
+              String(targetSizeBytes)
+            );
+          }
 
           const response = await fetch("/api/compress", {
             method: "POST",
@@ -640,15 +694,12 @@ export default function ImageCompressor() {
         <div className="absolute -right-40 top-[500px] h-[500px] w-[500px] rounded-full bg-violet-600/10 blur-[130px]" />
       </div>
 
-
       {/* HERO */}
       <section className="relative z-10 overflow-hidden border-b border-white/[0.05] px-5 pb-20 pt-20 sm:px-8 sm:pb-24 sm:pt-24">
-
         <div className="absolute -left-28 top-10 h-72 w-72 rounded-full bg-blue-600/10 blur-3xl" />
         <div className="absolute -right-20 bottom-0 h-80 w-80 rounded-full bg-violet-600/10 blur-3xl" />
 
         <div className="relative mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
-
           <div>
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-500/[0.08] px-4 py-2 text-xs font-bold text-blue-300">
               <Sparkles size={14} />
@@ -688,11 +739,9 @@ export default function ImageCompressor() {
 
           {/* HERO VISUAL */}
           <div className="relative mx-auto w-full max-w-md">
-
             <div className="absolute inset-8 rounded-full bg-gradient-to-br from-blue-600/20 to-violet-600/20 blur-3xl" />
 
             <div className="compressor-float relative rounded-[2rem] border border-white/10 bg-[#101a30]/90 p-5 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-7">
-
               <div className="mb-6 flex items-center justify-between">
                 <div>
                   <p className="font-bold text-white">
@@ -739,7 +788,6 @@ export default function ImageCompressor() {
                   Simple & free
                 </span>
               </div>
-
             </div>
           </div>
         </div>
@@ -751,7 +799,6 @@ export default function ImageCompressor() {
         className="relative z-10 scroll-mt-8 px-5 py-16 sm:px-8 sm:py-20"
       >
         <div className="mx-auto max-w-7xl">
-
           <div className="mx-auto mb-10 max-w-2xl text-center">
             <p className="text-sm font-bold uppercase tracking-[0.18em] text-blue-400">
               Image optimization studio
@@ -768,13 +815,10 @@ export default function ImageCompressor() {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[1fr_330px]">
-
             {/* LEFT WORKSPACE */}
             <div className="min-w-0 space-y-6">
-
               {/* UPLOAD CARD */}
               <div className="rounded-3xl border border-white/[0.08] bg-[#101a30] p-5 shadow-xl shadow-black/10 sm:p-7">
-
                 <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h3 className="text-lg font-bold text-white">
@@ -798,7 +842,6 @@ export default function ImageCompressor() {
                   )}
                 </div>
 
-                {/* UPLOAD ERROR */}
                 {uploadError && (
                   <div className="mb-5">
                     <ErrorAlert
@@ -858,7 +901,6 @@ export default function ImageCompressor() {
                 {/* FILE LIST */}
                 {files.length > 0 && (
                   <div className="mt-7">
-
                     <div className="mb-3 flex items-center justify-between">
                       <p className="text-sm font-bold text-slate-200">
                         Your images ({files.length})
@@ -870,7 +912,6 @@ export default function ImageCompressor() {
                     </div>
 
                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-
                       {files.map((item) => (
                         <div
                           key={item.id}
@@ -935,7 +976,6 @@ export default function ImageCompressor() {
                           </button>
                         </div>
                       ))}
-
                     </div>
                   </div>
                 )}
@@ -944,7 +984,6 @@ export default function ImageCompressor() {
               {/* PREVIEW CARD */}
               {selectedFile && (
                 <div className="rounded-3xl border border-white/[0.08] bg-[#101a30] p-5 shadow-xl shadow-black/10 sm:p-7">
-
                   <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <h3 className="text-lg font-bold text-white">
@@ -965,10 +1004,8 @@ export default function ImageCompressor() {
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
-
                     {/* ORIGINAL */}
                     <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#172642]/60">
-
                       <div className="border-b border-white/[0.07] px-4 py-3">
                         <p className="text-sm font-bold text-slate-200">
                           Original image
@@ -989,7 +1026,6 @@ export default function ImageCompressor() {
 
                     {/* COMPRESSED */}
                     <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#172642]/60">
-
                       <div className="border-b border-white/[0.07] px-4 py-3">
                         <p className="text-sm font-bold text-slate-200">
                           Compressed image
@@ -1003,7 +1039,6 @@ export default function ImageCompressor() {
                       </div>
 
                       <div className="flex min-h-48 items-center justify-center p-4">
-
                         {selectedFile.result ? (
                           <img
                             src={selectedFile.result.url}
@@ -1031,15 +1066,13 @@ export default function ImageCompressor() {
                             </p>
                           </div>
                         )}
-
                       </div>
                     </div>
                   </div>
 
-                  {/* INDIVIDUAL FILE ERROR WITH CROSS */}
+                  {/* INDIVIDUAL FILE ERROR */}
                   {selectedFile.status === "error" && (
                     <div className="mt-5 space-y-3">
-
                       <ErrorAlert
                         title="Image compression failed"
                         message={selectedFile.error}
@@ -1056,7 +1089,6 @@ export default function ImageCompressor() {
                   {/* RESULT */}
                   {selectedFile.result && (
                     <div className="mt-5 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.07] p-5">
-
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
                           <p className="text-sm font-bold text-emerald-300">
@@ -1076,7 +1108,6 @@ export default function ImageCompressor() {
                       </div>
 
                       <div className="mt-4 grid grid-cols-2 gap-3">
-
                         <div className="rounded-xl border border-white/[0.06] bg-[#101a30] p-3">
                           <p className="text-xs font-medium text-slate-500">
                             Original size
@@ -1094,8 +1125,19 @@ export default function ImageCompressor() {
                             {formatBytes(selectedFile.result.outputSize)}
                           </p>
                         </div>
-
                       </div>
+
+                      {targetSize.trim() && (
+                        <p className="mt-3 text-xs text-slate-400">
+                          Maximum requested: {targetSize} {targetSizeUnit}
+                          {selectedFile.result.outputSize <=
+                          (targetSizeUnit === "MB"
+                            ? Number(targetSize) * 1024 * 1024
+                            : Number(targetSize) * 1024)
+                            ? " · Target achieved"
+                            : " · Output exceeds requested target"}
+                        </p>
+                      )}
 
                       <button
                         type="button"
@@ -1105,7 +1147,6 @@ export default function ImageCompressor() {
                         <ArrowDownToLine size={18} />
                         Download compressed image
                       </button>
-
                     </div>
                   )}
                 </div>
@@ -1114,7 +1155,6 @@ export default function ImageCompressor() {
               {/* BATCH SUMMARY */}
               {successfulFiles.length > 0 && (
                 <div className="rounded-3xl border border-blue-400/20 bg-gradient-to-br from-blue-500/[0.12] to-violet-500/[0.08] p-5 sm:p-7">
-
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                       <p className="text-sm font-bold text-blue-300">
@@ -1166,9 +1206,7 @@ export default function ImageCompressor() {
 
             {/* SETTINGS SIDEBAR */}
             <aside className="h-fit space-y-5 lg:sticky lg:top-6">
-
               <div className="rounded-3xl border border-white/[0.08] bg-[#101a30] p-5 shadow-xl shadow-black/10 sm:p-6">
-
                 <div className="mb-6 flex items-center gap-3">
                   <div className="rounded-xl border border-blue-400/20 bg-blue-500/10 p-2.5 text-blue-400">
                     <Settings2 size={20} />
@@ -1287,6 +1325,62 @@ export default function ImageCompressor() {
 
                 <div className="my-6 border-t border-white/[0.07]" />
 
+                {/* CUSTOM MAXIMUM OUTPUT SIZE */}
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-slate-300">
+                    Maximum output size
+                  </label>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="any"
+                      value={targetSize}
+                      disabled={processing}
+                      onChange={(event) =>
+                        setTargetSize(event.target.value)
+                      }
+                      placeholder="e.g. 100"
+                      className="min-w-0 flex-1 rounded-xl border border-white/10 bg-[#172642] px-4 py-3 text-sm font-bold text-white outline-none placeholder:text-slate-600 focus:border-blue-400 disabled:opacity-50"
+                    />
+
+                    <div className="relative w-24 shrink-0">
+                      <select
+                        value={targetSizeUnit}
+                        disabled={processing}
+                        onChange={(event) =>
+                          setTargetSizeUnit(event.target.value)
+                        }
+                        className="h-full w-full appearance-none rounded-xl border border-white/10 bg-[#172642] px-3 py-3 text-sm font-bold text-slate-200 outline-none focus:border-blue-400 disabled:opacity-50"
+                      >
+                        <option value="KB">KB</option>
+                        <option value="MB">MB</option>
+                      </select>
+
+                      <ChevronDown
+                        size={15}
+                        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400"
+                      />
+                    </div>
+                  </div>
+
+                  <p className="mt-2 text-xs leading-5 text-slate-500">
+                    Apply the same maximum size to every image in your batch.
+                    Leave blank for normal compression.
+                  </p>
+
+                  {targetSize.trim() && (
+                    <div className="mt-3 rounded-xl border border-blue-400/15 bg-blue-500/[0.06] px-3 py-2.5">
+                      <p className="text-xs font-bold text-blue-300">
+                        Target: {targetSize} {targetSizeUnit} maximum per image
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="my-6 border-t border-white/[0.07]" />
+
                 {/* ADVANCED OPTIONS */}
                 <div>
                   <button
@@ -1309,9 +1403,7 @@ export default function ImageCompressor() {
 
                   {showAdvanced && (
                     <div className="mt-4 space-y-4">
-
                       <div className="grid grid-cols-2 gap-3">
-
                         <div>
                           <label className="mb-2 block text-xs font-bold text-slate-400">
                             Width (px)
@@ -1363,8 +1455,6 @@ export default function ImageCompressor() {
                         />
                         Keep aspect ratio
                       </label>
-
-                      
                     </div>
                   )}
                 </div>
@@ -1382,7 +1472,6 @@ export default function ImageCompressor() {
 
                 {/* COMPRESSION BUTTON */}
                 <div className="mt-7">
-
                   <button
                     type="button"
                     onClick={compressImages}
@@ -1440,7 +1529,6 @@ export default function ImageCompressor() {
                   {/* PROGRESS */}
                   {processing && (
                     <div className="mt-4">
-
                       <div className="mb-2 flex justify-between text-xs font-bold text-slate-400">
                         <span>Optimizing your images</span>
                         <span>{progress}%</span>
@@ -1514,7 +1602,6 @@ export default function ImageCompressor() {
         className="relative z-10 border-y border-white/[0.06] bg-white/[0.015] px-5 py-16 sm:px-8 sm:py-20"
       >
         <div className="mx-auto max-w-7xl">
-
           <div className="mx-auto mb-12 max-w-2xl text-center">
             <p className="text-sm font-bold uppercase tracking-[0.18em] text-blue-400">
               Built for everyday work
@@ -1531,7 +1618,6 @@ export default function ImageCompressor() {
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-
             {[
               {
                 icon: Zap,
@@ -1579,7 +1665,6 @@ export default function ImageCompressor() {
                 </div>
               );
             })}
-
           </div>
         </div>
       </section>
@@ -1590,7 +1675,6 @@ export default function ImageCompressor() {
         className="relative z-10 border-y border-white/[0.06] bg-[#101a30] px-5 py-16 sm:px-8 sm:py-20"
       >
         <div className="mx-auto max-w-7xl">
-
           <div className="mx-auto mb-12 max-w-2xl text-center">
             <p className="text-sm font-bold uppercase tracking-[0.18em] text-blue-400">
               Three simple steps
@@ -1606,7 +1690,6 @@ export default function ImageCompressor() {
           </div>
 
           <div className="grid gap-5 md:grid-cols-3">
-
             {[
               {
                 number: "01",
@@ -1620,7 +1703,7 @@ export default function ImageCompressor() {
                 icon: Settings2,
                 title: "Choose your settings",
                 description:
-                  "Select a quality preset, output format and optional dimensions.",
+                  "Select a quality preset, output format, maximum file size and optional dimensions.",
               },
               {
                 number: "03",
@@ -1657,7 +1740,6 @@ export default function ImageCompressor() {
                 </div>
               );
             })}
-
           </div>
 
           <div className="mt-12 text-center">
@@ -1671,8 +1753,6 @@ export default function ImageCompressor() {
           </div>
         </div>
       </section>
-
-      
     </main>
   );
 }
