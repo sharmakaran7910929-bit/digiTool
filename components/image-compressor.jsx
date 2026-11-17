@@ -701,20 +701,7 @@ if (
         className="relative z-10 scroll-mt-8 px-5 py-16 sm:px-8 sm:py-20"
       >
         <div className="mx-auto max-w-7xl">
-          <div className="mx-auto mb-10 max-w-2xl text-center">
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-blue-400">
-              Image optimization studio
-            </p>
-
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              Compress your images
-            </h2>
-
-            <p className="mt-4 leading-7 text-slate-400">
-              Upload your images, customize your settings,
-              and let DigiTool handle the optimization.
-            </p>
-          </div>
+          <ImageStudioHeading />
 
           <div className="grid gap-6 lg:grid-cols-[1fr_330px]">
             {/* LEFT WORKSPACE */}
@@ -1372,87 +1359,86 @@ if (
                   </div>
                 )}
 
-                {/* COMPRESSION BUTTON */}
-                <div className="mt-7">
-                  <button
-                    type="button"
-                    onClick={compressImages}
-                    disabled={
-                      !files.length ||
-                      processing ||
-                      allCompressed
-                    }
-                    className={`group relative isolate flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl px-5 py-4 text-base font-bold text-white shadow-xl transition duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-50 ${
-                      allCompressed
-                        ? "bg-emerald-600"
-                        : processing
-                          ? "bg-blue-600"
-                          : "compressor-gradient bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-600 shadow-blue-950/30 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-950/40"
-                    }`}
-                  >
-                    {!processing &&
-                      files.length > 0 &&
-                      !allCompressed && (
-                        <span className="compressor-shimmer pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-                      )}
+                
+{/* OPTIMIZATION BUTTON */}
+<div className="mt-7">
+  <button
+    type="button"
+    onClick={compressImages}
+    disabled={
+      !files.length ||
+      processing ||
+      allCompressed
+    }
+    className={`group relative isolate flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl px-5 py-4 text-base font-bold text-white shadow-xl transition duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-50 ${
+      allCompressed
+        ? "bg-emerald-600"
+        : processing
+          ? "bg-blue-600"
+          : "compressor-gradient bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-600 shadow-blue-950/30 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-950/40"
+    }`}
+  >
+    {!processing &&
+      files.length > 0 &&
+      !allCompressed && (
+        <span className="compressor-shimmer pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+      )}
 
-                    {processing ? (
-                      <>
-                        <LoaderCircle
-                          size={20}
-                          className="animate-spin"
-                        />
-                        Processing {completedCount}/{totalToProcess}
-                      </>
-                    ) : allCompressed ? (
-                      <>
-                        <CheckCircle2 size={19} />
-                        All Images Compressed
-                      </>
-                    ) : failedFiles.length > 0 ? (
-                      <>
-                        <RefreshCw size={19} />
-                        Retry Failed Images
-                      </>
-                    ) : successfulFiles.length > 0 ? (
-                      <>
-                        <Sparkles size={19} />
-                        Compress Remaining Images
-                      </>
-                    ) : (
-                      <>
-                        <Zap size={19} fill="currentColor" />
-                        Compress Images
-                        <Sparkles size={17} />
-                      </>
-                    )}
-                  </button>
+    {processing ? (
+      <>
+        <LoaderCircle size={20} className="animate-spin" />
+        Processing {completedCount}/{totalToProcess}
+      </>
+    ) : allCompressed ? (
+      <>
+        <CheckCircle2 size={19} />
+        All Images Processed
+      </>
+    ) : failedFiles.length > 0 ? (
+      <>
+        <RefreshCw size={19} />
+        Retry Failed Images
+      </>
+    ) : successfulFiles.length > 0 ? (
+      <>
+        <Sparkles size={19} />
+        Process Remaining Images
+      </>
+    ) : (
+      <>
+        <Zap size={19} fill="currentColor" />
+       Apply Styles
+        <Sparkles size={17} />
+      </>
+    )}
+  </button>
 
-                  {/* PROGRESS */}
-                  {processing && (
-                    <div className="mt-4">
-                      <div className="mb-2 flex justify-between text-xs font-bold text-slate-400">
-                        <span>Optimizing your images</span>
-                        <span>{progress}%</span>
-                      </div>
+  {/* PROGRESS */}
+  {processing && (
+    <div className="mt-4">
+      <div className="mb-2 flex justify-between text-xs font-bold text-slate-400">
+        <span>Optimizing your images</span>
+        <span>{progress}%</span>
+      </div>
 
-                      <div className="h-2 overflow-hidden rounded-full bg-white/10">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-fuchsia-500 transition-all duration-500"
-                          style={{ width: `${progress}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
+      <div className="h-2 overflow-hidden rounded-full bg-white/10">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-fuchsia-500 transition-all duration-500"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+    </div>
+  )}
 
-                  <p className="mt-3 text-center text-xs leading-5 text-slate-500">
-                    {processing
-                      ? "Please keep this tab open while processing."
-                      : allCompressed
-                        ? "Your images are ready. Download them or add more images."
-                        : "Your images are processed using our compression engine."}
-                  </p>
-                </div>
+  <p className="mt-3 text-center text-xs leading-5 text-slate-500">
+    {processing
+      ? "Please keep this tab open while processing."
+      : allCompressed
+        ? "Your images are ready. Download them or add more images."
+        : "Compress, convert and optimize your images with customizable settings."}
+  </p>
+</div>
+
               </div>
 
               {/* PRIVACY CARD */}
@@ -1656,5 +1642,66 @@ if (
         </div>
       </section>
     </main>
+  );
+}
+
+
+
+const phrases = [
+  "Compress Your Images",
+  "Convert Your Images to Any Format",
+];
+
+function ImageStudioHeading() {
+  const [phraseIndex, setPhraseIndex] = useState(0);
+  const [text, setText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    const currentPhrase = phrases[phraseIndex];
+
+    let delay = deleting ? 35 : 75;
+
+    if (!deleting && text === currentPhrase) {
+      delay = 1600;
+    } else if (deleting && text === "") {
+      delay = 400;
+    }
+
+    const timer = setTimeout(() => {
+      if (!deleting && text === currentPhrase) {
+        setDeleting(true);
+      } else if (deleting && text === "") {
+        setDeleting(false);
+        setPhraseIndex((prev) => (prev + 1) % phrases.length);
+      } else if (deleting) {
+        setText(currentPhrase.slice(0, text.length - 1));
+      } else {
+        setText(currentPhrase.slice(0, text.length + 1));
+      }
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [text, deleting, phraseIndex]);
+
+  return (
+    <div className="mx-auto mb-10 max-w-3xl text-center">
+      <p className="text-sm font-bold uppercase tracking-[0.18em] text-blue-400">
+        Image Optimization Studio
+      </p>
+
+      <h2 className="mt-4 min-h-[88px] text-3xl font-bold tracking-tight sm:min-h-[96px] sm:text-4xl md:text-5xl">
+        <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-violet-400 bg-clip-text text-transparent">
+          {text}
+        </span>
+        <span className="ml-1 inline-block h-[0.9em] w-[3px] translate-y-1 animate-pulse bg-cyan-400" />
+      </h2>
+
+      <p className="mt-4 leading-7 text-slate-400">
+        Compress images, convert between popular formats,
+        and customize your output settings. Let DigiTool
+        handle your image optimization effortlessly.
+      </p>
+    </div>
   );
 }
