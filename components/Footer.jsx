@@ -56,7 +56,7 @@ export default function Footer() {
               </div>
 
               <span className="text-2xl font-bold tracking-tight text-white">
-                Digital<span className="text-blue-400">Tool</span>
+                Digi<span className="text-blue-400">Tool</span>
               </span>
             </Link>
 
@@ -133,7 +133,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 text-center sm:flex-row sm:text-left">
           <p className="text-xs text-slate-500">
-            © 2026 DigitalTool. All rights reserved.
+            © 2026 DigiTool. All rights reserved.
           </p>
 
           <p className="text-xs text-slate-500">

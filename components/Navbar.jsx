@@ -48,7 +48,7 @@ export default function Navbar() {
 
           <div>
             <span className="text-xl font-bold tracking-tight text-white">
-              Digital<span className="text-blue-400">Tool</span>
+              Digi<span className="text-blue-400">Tool</span>
             </span>
             <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400">
               SMART TOOLS. SIMPLIFIED.
