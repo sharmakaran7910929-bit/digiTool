@@ -99,6 +99,18 @@ function formatTargetSize(bytes) {
   return `${(bytes / 1024).toFixed(2)} KB`;
 }
 
+// Normalize Sharp's HEIF/AV1 metadata to AVIF.
+function getNormalizedInputFormat(metadata) {
+  if (
+    metadata.format === "heif" &&
+    String(metadata.compression || "").toLowerCase() === "av1"
+  ) {
+    return "avif";
+  }
+
+  return metadata.format;
+}
+
 function getProcessingError(error) {
   const message = String(error?.message || "").toLowerCase();
 
@@ -413,13 +425,20 @@ export async function POST(request) {
 
     try {
       metadata = await image.metadata();
-    } catch {
+    } catch (error) {
+      console.error("Sharp metadata error:", error);
       return jsonError("CORRUPTED_IMAGE", 422);
     }
 
-    // 11. Verify actual image format.
-    if (!SUPPORTED_FORMATS.includes(metadata.format)) {
-      return jsonError("UNSUPPORTED_FORMAT", 415);
+    // 11. Normalize and verify actual image format.
+    const inputFormat = getNormalizedInputFormat(metadata);
+
+    if (!SUPPORTED_FORMATS.includes(inputFormat)) {
+      return jsonError(
+        "UNSUPPORTED_FORMAT",
+        415,
+        `Unsupported image format detected: ${metadata.format || "unknown"}.`
+      );
     }
 
     if (!metadata.width || !metadata.height) {
@@ -434,7 +453,7 @@ export async function POST(request) {
     // 13. Determine output format.
     const outputFormat =
       normalizedFormat === "original"
-        ? metadata.format
+        ? inputFormat
         : normalizedFormat;
 
     if (!SUPPORTED_FORMATS.includes(outputFormat)) {
