@@ -694,104 +694,6 @@ if (
         <div className="absolute -right-40 top-[500px] h-[500px] w-[500px] rounded-full bg-violet-600/10 blur-[130px]" />
       </div>
 
-      {/* HERO */}
-      <section className="relative z-10 overflow-hidden border-b border-white/[0.05] px-5 pb-20 pt-20 sm:px-8 sm:pb-24 sm:pt-24">
-        <div className="absolute -left-28 top-10 h-72 w-72 rounded-full bg-blue-600/10 blur-3xl" />
-        <div className="absolute -right-20 bottom-0 h-80 w-80 rounded-full bg-violet-600/10 blur-3xl" />
-
-        <div className="relative mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
-          <div>
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-500/[0.08] px-4 py-2 text-xs font-bold text-blue-300">
-              <Sparkles size={14} />
-              FREE ONLINE IMAGE COMPRESSOR
-            </div>
-
-            <h1 className="max-w-3xl text-4xl font-bold leading-[1.12] tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Smaller images.
-              <span className="mt-2 block bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
-                Bigger possibilities.
-              </span>
-            </h1>
-
-            <p className="mt-6 max-w-xl text-base leading-8 text-slate-400 sm:text-lg">
-              Compress your images without complicated steps.
-              Reduce file size, choose your preferred format,
-              and download optimized images with ease.
-            </p>
-
-            <div className="mt-8 flex flex-wrap gap-3 text-xs font-semibold text-slate-300">
-              <span className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5">
-                <ShieldCheck size={15} className="text-emerald-400" />
-                Privacy focused
-              </span>
-
-              <span className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5">
-                <Zap size={15} className="text-yellow-400" />
-                Fast processing
-              </span>
-
-              <span className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5">
-                <FileImage size={15} className="text-blue-400" />
-                Multiple formats
-              </span>
-            </div>
-          </div>
-
-          {/* HERO VISUAL */}
-          <div className="relative mx-auto w-full max-w-md">
-            <div className="absolute inset-8 rounded-full bg-gradient-to-br from-blue-600/20 to-violet-600/20 blur-3xl" />
-
-            <div className="compressor-float relative rounded-[2rem] border border-white/10 bg-[#101a30]/90 p-5 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-7">
-              <div className="mb-6 flex items-center justify-between">
-                <div>
-                  <p className="font-bold text-white">
-                    Smart compression
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    A lighter image in a few clicks
-                  </p>
-                </div>
-
-                <div className="rounded-xl bg-blue-500/10 p-3 text-blue-400">
-                  <ImagePlus size={23} />
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-white/[0.06] bg-[#172642] p-5">
-                <div className="flex items-center justify-center gap-4">
-                  <div className="flex h-24 w-24 items-center justify-center rounded-2xl border border-white/10 bg-[#101a30]">
-                    <FileImage size={38} className="text-blue-400" />
-                  </div>
-
-                  <ArrowRight size={24} className="text-violet-400" />
-
-                  <div className="relative flex h-24 w-24 items-center justify-center rounded-2xl border border-white/10 bg-[#101a30]">
-                    <FileImage size={32} className="text-emerald-400" />
-                    <CheckCircle2
-                      size={17}
-                      className="absolute right-2 top-2 text-emerald-400"
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-5 flex items-center justify-between text-xs font-bold">
-                  <span className="text-slate-400">Original image</span>
-                  <span className="text-emerald-400">Optimized image</span>
-                </div>
-              </div>
-
-              <div className="mt-5 flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3">
-                <span className="text-sm font-bold text-slate-300">
-                  Ready to optimize
-                </span>
-                <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-400">
-                  Simple & free
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* COMPRESSOR WORKSPACE */}
       <section
@@ -1323,10 +1225,10 @@ if (
                   </div>
                 </div>
 
-                <div className="my-6 border-t border-white/[0.07]" />
+            
 
                 {/* CUSTOM MAXIMUM OUTPUT SIZE */}
-                <div>
+                <div className="hidden">
                   <label className="mb-2 block text-sm font-bold text-slate-300">
                     Maximum output size
                   </label>
