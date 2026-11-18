@@ -1650,6 +1650,14 @@ if (
 const phrases = [
   "Compress Your Images",
   "Convert Your Images to Any Format",
+  'JPEG to PNG',
+  'PNG to JPEG',
+  'WEBP TO JEPG',
+  'JPEG TO WEBP',
+  'AVIF TO PNG',
+  'PNG TO AVIF',
+  'PNG TO WEBP',
+  'WEBP TO PNG'
 ];
 
 function ImageStudioHeading() {

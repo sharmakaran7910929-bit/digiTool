@@ -23,16 +23,7 @@ const usefulLinks = [
     href: "/",
     icon: Home,
   },
-  {
-    name: "Privacy Policy",
-    href: "/privacy-policy",
-    icon: ShieldCheck,
-  },
-  {
-    name: "Contact",
-    href: "/contact",
-    icon: Mail,
-  },
+ 
 ];
 
 export default function Footer() {

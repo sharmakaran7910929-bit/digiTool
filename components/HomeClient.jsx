@@ -1,4 +1,3 @@
- 
 "use client";
 
 import { useMemo, useState } from "react";
@@ -13,60 +12,32 @@ import {
   Sparkles,
   CheckCircle2,
   LockKeyhole,
-  Layers,
-  FileImage,
-  Maximize2,
+  FileText,
   Menu,
   X,
   ChevronRight,
   Command,
-  WandSparkles,
   ScanSearch,
   Clock3,
   Heart,
+  Files,
+  FileImage,
+  FileOutput,
+  Layers,
 } from "lucide-react";
-
-
 
 const tools = [
   {
-    name: "Image Compressor",
+    name: "Image Tools",
     description:
-      "Compress JPG, PNG, WebP and other images with control over quality and file size.",
+      "Compress, resize, and convert JPG, PNG, WebP, AVIF, and other image formats in one place.",
     category: "Images",
     icon: ImageIcon,
     href: "/image-compressor",
     status: "available",
-    tag: "Popular",
+    tag: "3 Tools in 1",
   },
-  {
-    name: "Image Resizer",
-    description: "Resize images to the exact dimensions you need.",
-    category: "Images",
-    icon: Maximize2,
-    status: "soon",
-  },
-  {
-    name: "Image Converter",
-    description: "Convert images between popular file formats.",
-    category: "Images",
-    icon: FileImage,
-    status: "soon",
-  },
-  {
-    name: "PDF Compressor",
-    description: "Reduce large PDF files for easier sharing.",
-    category: "PDF",
-    icon: Layers,
-    status: "soon",
-  },
-  {
-    name: "Image Background Remover",
-    description: "Make image backgrounds transparent.",
-    category: "Images",
-    icon: WandSparkles,
-    status: "soon",
-  },
+  
 ];
 
 const categories = ["All Tools", "Images", "PDF"];
@@ -80,7 +51,7 @@ const benefits = [
   {
     icon: ShieldCheck,
     title: "Privacy Focused",
-    description: "Designed with privacy and secure file handling in mind.",
+    description: "Your files are processed using our own tools and systems.",
   },
   {
     icon: LockKeyhole,
@@ -120,19 +91,15 @@ export default function Home() {
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#080d1c] text-white selection:bg-blue-500/30">
-
-      {/* Background decoration */}
+      {/* BACKGROUND */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full bg-blue-600/10 blur-[130px]" />
         <div className="absolute -right-40 top-[400px] h-[500px] w-[500px] rounded-full bg-violet-600/10 blur-[130px]" />
       </div>
 
-     
-
       {/* HERO */}
       <section className="relative z-10 px-5 pb-20 pt-20 md:pb-28 md:pt-28">
         <div className="mx-auto max-w-5xl text-center">
-
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -142,7 +109,7 @@ export default function Home() {
             <Sparkles size={14} />
             A smarter way to get things done
             <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px]">
-              NEW
+              DIGITAL TOOLS
             </span>
           </motion.div>
 
@@ -165,9 +132,9 @@ export default function Home() {
             transition={{ delay: 0.2 }}
             className="mx-auto mt-7 max-w-2xl text-base leading-8 text-slate-400 md:text-lg"
           >
-            Get everyday digital tasks done effortlessly.
-            Discover practical online tools designed to save time,
-            simplify work and make your digital life easier.
+            Compress images, manage PDF documents, and complete everyday
+            digital tasks with practical online tools designed to save time
+            and simplify your work.
           </motion.p>
 
           {/* SEARCH */}
@@ -207,11 +174,11 @@ export default function Home() {
               </button>
             </div>
             <p className="mt-4 text-xs text-slate-500">
-              Try searching: image compressor, resize image, PDF
+              Try searching: image tools, compress PDF, merge PDF
             </p>
           </motion.div>
 
-          {/* QUICK STATS */}
+          {/* QUICK BENEFITS */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -233,7 +200,7 @@ export default function Home() {
           </motion.div>
         </div>
 
-        {/* HERO VISUAL */}
+        {/* HERO WORKSPACE */}
         <motion.div
           initial={{ opacity: 0, y: 35, scale: 0.96 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -250,58 +217,37 @@ export default function Home() {
                 <div className="h-2.5 w-2.5 rounded-full bg-green-400" />
               </div>
               <span className="text-xs font-medium text-slate-500">
-                DigiTool Workspace
+                DigitalTool Workspace
               </span>
               <Sparkles size={17} className="text-blue-400" />
             </div>
 
-            <div className="grid gap-5 md:grid-cols-[1fr_1fr]">
-              <div className="flex min-h-[220px] flex-col justify-center rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-indigo-500/[0.03] p-7">
+            <div className="grid gap-5 md:grid-cols-2">
+              <Link
+                href="/image-compressor"
+                className="group flex min-h-[240px] flex-col justify-center rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-500/10 to-indigo-500/[0.03] p-7 transition hover:border-blue-400/40"
+              >
                 <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/15 text-blue-400">
                   <ImageIcon size={30} />
                 </div>
-                <h3 className="text-xl font-bold">Image Compressor</h3>
+                <h3 className="text-xl font-bold">Image Tools</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-400">
-                  Reduce image file size while keeping quality under control.
+                  Compress, resize, and convert images using one convenient tool.
                 </p>
-                <Link
-                  href="/image-compressor"
-                  className="mt-6 inline-flex w-fit items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold transition hover:bg-blue-500"
-                >
-                  Try the tool <ArrowRight size={16} />
-                </Link>
-              </div>
+                <span className="mt-6 inline-flex w-fit items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold transition group-hover:bg-blue-500">
+                  Explore Image Tools <ArrowRight size={16} />
+                </span>
+              </Link>
 
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { icon: Maximize2, title: "Resize Images" },
-                  { icon: FileImage, title: "Convert Formats" },
-                  { icon: Layers, title: "PDF Tools" },
-                  { icon: WandSparkles, title: "Smart Editing" },
-                ].map((item, i) => (
-                  <div
-                    key={item.title}
-                    className="flex flex-col justify-center rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4 transition hover:border-blue-400/30 hover:bg-blue-500/[0.05]"
-                  >
-                    <item.icon className="mb-4 text-slate-400" size={23} />
-                    <p className="text-xs font-semibold text-slate-300">
-                      {item.title}
-                    </p>
-                    <span className="mt-2 text-[10px] text-slate-600">
-                      Coming soon
-                    </span>
-                  </div>
-                ))}
-              </div>
+             
             </div>
           </div>
         </motion.div>
       </section>
 
-      {/* TOOLS */}
+      {/* TOOL LIBRARY */}
       <section id="tools" className="relative z-10 scroll-mt-20 px-5 py-24">
         <div className="mx-auto max-w-7xl">
-
           <div className="mb-10 flex flex-col justify-between gap-6 md:flex-row md:items-end">
             <div>
               <div className="mb-3 flex items-center gap-2 text-sm font-bold text-blue-400">
@@ -311,13 +257,13 @@ export default function Home() {
                 Explore Our Tools
               </h2>
               <p className="mt-3 max-w-xl text-sm leading-7 text-slate-400">
-                Find the right solution for your everyday digital tasks.
-                More useful tools are being developed.
+                Practical tools for images, documents, and everyday digital
+                tasks. Each tool brings related features together in one place.
               </p>
             </div>
 
             <span className="w-fit rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs text-slate-400">
-              {tools.filter(t => t.status === "available").length} available · {tools.filter(t => t.status === "soon").length} coming soon
+              {tools.filter((t) => t.status === "available").length} available
             </span>
           </div>
 
@@ -355,16 +301,9 @@ export default function Home() {
                     <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400 transition group-hover:bg-blue-500/20">
                       <tool.icon size={24} />
                     </div>
-
-                    {tool.status === "available" ? (
-                      <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-bold text-emerald-400">
-                        AVAILABLE
-                      </span>
-                    ) : (
-                      <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-[10px] font-bold text-slate-500">
-                        COMING SOON
-                      </span>
-                    )}
+                    <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-bold text-emerald-400">
+                      AVAILABLE
+                    </span>
                   </div>
 
                   <div className="flex-1">
@@ -381,18 +320,12 @@ export default function Home() {
                     </p>
                   </div>
 
-                  {tool.status === "available" ? (
-                    <Link
-                      href={tool.href}
-                      className="mt-7 flex items-center justify-between border-t border-white/[0.07] pt-5 text-sm font-bold text-blue-400 transition hover:text-blue-300"
-                    >
-                      Open Tool <ArrowRight size={17} />
-                    </Link>
-                  ) : (
-                    <div className="mt-7 flex items-center justify-between border-t border-white/[0.07] pt-5 text-sm font-semibold text-slate-600">
-                      Under Development <Clock3 size={16} />
-                    </div>
-                  )}
+                  <Link
+                    href={tool.href}
+                    className="mt-7 flex items-center justify-between border-t border-white/[0.07] pt-5 text-sm font-bold text-blue-400 transition hover:text-blue-300"
+                  >
+                    Open Tool <ArrowRight size={17} />
+                  </Link>
                 </motion.div>
               ))}
             </AnimatePresence>
@@ -420,16 +353,21 @@ export default function Home() {
       </section>
 
       {/* FEATURES */}
-      <section id="features" className="relative z-10 border-y border-white/[0.06] bg-white/[0.015] px-5 py-24">
+      <section
+        id="features"
+        className="relative z-10 border-y border-white/[0.06] bg-white/[0.015] px-5 py-24"
+      >
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto mb-14 max-w-2xl text-center">
-            <span className="text-sm font-bold text-blue-400">WHY DIGITOOL</span>
+            <span className="text-sm font-bold text-blue-400">
+              WHY DIGITALTOOL
+            </span>
             <h2 className="mt-4 text-3xl font-bold md:text-4xl">
               Useful tools. No unnecessary complexity.
             </h2>
             <p className="mt-4 text-sm leading-7 text-slate-400">
-              We believe everyday digital tasks should be simple,
-              accessible and straightforward.
+              Everyday digital tasks should be simple, accessible, and
+              straightforward.
             </p>
           </div>
 
@@ -468,20 +406,18 @@ export default function Home() {
               Make your next task easier.
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-sm leading-7 text-slate-400 md:text-base">
-              Start with our image compressor and discover a growing
-              collection of practical digital solutions.
+              From image editing to PDF management, discover practical tools
+              that help you get more done with less effort.
             </p>
             <Link
               href="/image-compressor"
               className="mt-9 inline-flex items-center gap-3 rounded-xl bg-blue-600 px-7 py-4 text-sm font-bold shadow-xl shadow-blue-600/20 transition hover:-translate-y-1 hover:bg-blue-500"
             >
-              Try Image Compressor <ArrowRight size={18} />
+              Explore Image Tools <ArrowRight size={18} />
             </Link>
           </div>
         </div>
       </section>
-
-     
     </main>
   );
 }
